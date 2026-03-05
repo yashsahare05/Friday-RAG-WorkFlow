@@ -150,3 +150,41 @@ def reset_db() -> None:
 
 
 collection = init_db()
+
+
+if __name__ == "__main__":
+    try:
+        import sys
+
+        sys.path.insert(0, ".")
+
+        from ocr import extract_text_from_pdf
+        from chunker import chunk_pages
+
+        print("Step 1: Extracting text...")
+        pages = extract_text_from_pdf("../data/uploads/test.pdf")
+        print(f"Total pages: {len(pages)}")
+
+        print("Step 2: Chunking...")
+        chunks = chunk_pages(pages, "test.pdf")
+        print(f"Total chunks: {len(chunks)}")
+
+        print("Step 3: Storing in ChromaDB...")
+        store_chunks(chunks)
+
+        print("Step 4: Searching...")
+        results = search("what is in these notes")
+        for index, result in enumerate(results, start=1):
+            similarity = float(result.get("similarity", 0.0))
+            page_num = result.get("page_num")
+            text = result.get("text", "") or ""
+            snippet = text[:100]
+            print(
+                f"{index}. {similarity:.2f} | page {page_num} | {snippet}"
+            )
+
+        print("Step 5: Sources:")
+        sources = get_all_sources()
+        print(sources)
+    except Exception as exc:
+        print(f"[VECTORSTORE] Error: {exc}")

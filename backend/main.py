@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
         print("[STARTUP] Ollama is running")
     except Exception:
         print("[STARTUP] WARNING: Ollama is not running. Start it with: ollama serve")
-    print("[STARTUP] NoteMind API ready at http://localhost:8000")
+    print("[STARTUP] Friday API ready at http://localhost:8000")
     yield
 
 
@@ -172,7 +172,7 @@ async def generate_report():
     pdf = canvas.Canvas(output_path, pagesize=A4)
 
     pdf.setFont("Helvetica-Bold", 24)
-    pdf.drawString(margin, y, "NoteMind Session Report")
+    pdf.drawString(margin, y, "Friday Session Report")
     y -= 30
 
     pdf.setFont("Helvetica", 12)
@@ -248,7 +248,7 @@ async def generate_report():
     return FileResponse(
         output_path,
         media_type="application/pdf",
-        filename="notemind_report.pdf",
+        filename="friday_report.pdf",
     )
 
 

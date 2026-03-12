@@ -1,8 +1,8 @@
 from datetime import datetime
 
-import ollama
+import requests
 
-from config import OLLAMA_MODEL, SIMILARITY_THRESHOLD
+from config import GROQ_API_KEY, GROQ_BASE_URL, GROQ_MODEL, SIMILARITY_THRESHOLD
 from vectorstore import search
 
 
@@ -60,12 +60,37 @@ def answer_question(question: str, history: list[dict]) -> dict:
         "ANSWER:"
     )
 
-    response = ollama.chat(
-        model=OLLAMA_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        options={"temperature": 0},
+    if not GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY is not set")
+
+    response = requests.post(
+        f"{GROQ_BASE_URL.rstrip('/')}/chat/completions",
+        headers={
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "model": GROQ_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0,
+        },
+        timeout=60,
     )
-    answer_text = response["message"]["content"]
+
+    if not response.ok:
+        raise RuntimeError(
+            f"Groq API error ({response.status_code}): {response.text}"
+        )
+
+    payload = response.json()
+    choices = payload.get("choices") or []
+    if not choices:
+        raise RuntimeError("Groq API returned no choices")
+
+    message = choices[0].get("message") or {}
+    answer_text = message.get("content") or ""
+    if not answer_text:
+        raise RuntimeError("Groq API returned empty content")
 
     sources = []
     for result in top_results:

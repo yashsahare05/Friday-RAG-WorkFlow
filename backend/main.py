@@ -1,9 +1,12 @@
 import os
 import shutil
 import datetime
+import asyncio
+import threading
+import uuid
 from contextlib import asynccontextmanager
+from typing import Any, Optional
 
-import ollama
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,16 +24,126 @@ import config
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        ollama.list()
-        print("[STARTUP] Ollama is running")
-    except Exception:
-        print("[STARTUP] WARNING: Ollama is not running. Start it with: ollama serve")
+    if config.GROQ_API_KEY:
+        print("[STARTUP] Groq API key detected")
+    else:
+        print("[STARTUP] WARNING: GROQ_API_KEY is not set")
+
+    if config.JINA_API_KEY:
+        print("[STARTUP] Jina API key detected")
+    else:
+        print("[STARTUP] WARNING: JINA_API_KEY is not set")
+
     print("[STARTUP] Friday API ready at http://localhost:8000")
     yield
 
 
 app = FastAPI(lifespan=lifespan)
+
+index_jobs: dict[str, dict[str, Any]] = {}
+index_lock = threading.Lock()
+
+
+def _set_job(job_id: str, data: dict[str, Any]) -> None:
+    with index_lock:
+        index_jobs[job_id] = data
+
+
+def _update_job(job_id: str, **updates: Any) -> None:
+    with index_lock:
+        job = index_jobs.get(job_id)
+        if job is None:
+            return
+        job.update(updates)
+        job["updated_at"] = datetime.datetime.utcnow().isoformat()
+
+
+def _get_job(job_id: str) -> Optional[dict[str, Any]]:
+    with index_lock:
+        job = index_jobs.get(job_id)
+        if job is None:
+            return None
+        return dict(job)
+
+
+def _scale_progress(done: int, total: int, start: int, end: int) -> int:
+    if total <= 0:
+        return end
+    ratio = max(0.0, min(float(done) / float(total), 1.0))
+    return int(start + (end - start) * ratio)
+
+
+def _process_upload(job_id: str, destination: str, safe_name: str) -> None:
+    try:
+        _update_job(job_id, status="processing", phase="ocr", progress=0)
+
+        def ocr_progress(done: int, total: int, method: str) -> None:
+            progress = _scale_progress(done, total, 0, 40)
+            _update_job(
+                job_id,
+                phase=f"ocr ({method})",
+                progress=progress,
+                pages_total=total,
+                pages_done=done,
+            )
+
+        pages = ocr.extract_text_from_pdf(destination, on_progress=ocr_progress)
+
+        _update_job(job_id, phase="chunking", progress=40, pages=len(pages))
+
+        def chunk_progress(done: int, total: int) -> None:
+            progress = _scale_progress(done, total, 40, 60)
+            _update_job(
+                job_id,
+                phase="chunking",
+                progress=progress,
+                pages_total=total,
+                pages_done=done,
+            )
+
+        chunks = chunker.chunk_pages(pages, safe_name, on_progress=chunk_progress)
+
+        _update_job(
+            job_id,
+            phase="embedding",
+            progress=60,
+            chunks_total=len(chunks),
+            chunks_done=0,
+        )
+
+        def embed_progress(done: int, total: int) -> None:
+            progress = _scale_progress(done, total, 60, 100)
+            _update_job(
+                job_id,
+                phase="embedding",
+                progress=progress,
+                chunks_total=total,
+                chunks_done=done,
+            )
+
+        vectorstore.store_chunks(chunks, on_progress=embed_progress)
+
+        _update_job(
+            job_id,
+            status="done",
+            phase="complete",
+            progress=100,
+            filename=safe_name,
+            pages=len(pages),
+            chunks=len(chunks),
+            message=f"Successfully indexed {len(chunks)} chunks from {len(pages)} pages",
+        )
+    except Exception as exc:
+        _update_job(
+            job_id,
+            status="error",
+            phase="error",
+            error=str(exc),
+        )
+
+
+async def _run_index_job(job_id: str, destination: str, safe_name: str) -> None:
+    await asyncio.to_thread(_process_upload, job_id, destination, safe_name)
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,26 +172,42 @@ async def upload_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
     destination = os.path.join(config.UPLOAD_DIR, safe_name)
+    job_id = uuid.uuid4().hex
+    _set_job(
+        job_id,
+        {
+            "job_id": job_id,
+            "status": "queued",
+            "phase": "queued",
+            "progress": 0,
+            "filename": safe_name,
+            "created_at": datetime.datetime.utcnow().isoformat(),
+            "updated_at": datetime.datetime.utcnow().isoformat(),
+        },
+    )
 
     try:
         with open(destination, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-
-        pages = ocr.extract_text_from_pdf(destination)
-        chunks = chunker.chunk_pages(pages, safe_name)
-        vectorstore.store_chunks(chunks)
-
-        return {
-            "status": "success",
-            "filename": safe_name,
-            "pages": len(pages),
-            "chunks": len(chunks),
-            "message": f"Successfully indexed {len(chunks)} chunks from {len(pages)} pages",
-        }
-    except HTTPException:
-        raise
     except Exception as exc:
+        _update_job(job_id, status="error", phase="error", error=str(exc))
         raise HTTPException(status_code=500, detail=str(exc))
+
+    asyncio.create_task(_run_index_job(job_id, destination, safe_name))
+
+    return {
+        "status": "accepted",
+        "job_id": job_id,
+        "filename": safe_name,
+    }
+
+
+@app.get("/upload/status/{job_id}")
+async def upload_status(job_id: str):
+    job = _get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Upload job not found")
+    return job
 
 
 @app.post("/chat")
@@ -116,17 +245,14 @@ async def reset_db():
 
 @app.get("/health")
 async def health_check():
-    ollama_running = False
-    try:
-        ollama.list()
-        ollama_running = True
-    except Exception:
-        ollama_running = False
-
     return {
         "status": "ok",
-        "ollama": ollama_running,
-        "model": config.OLLAMA_MODEL,
+        "llm_provider": "groq",
+        "llm_ready": bool(config.GROQ_API_KEY),
+        "llm_model": config.GROQ_MODEL,
+        "embed_provider": "jina",
+        "embed_ready": bool(config.JINA_API_KEY),
+        "embed_model": config.JINA_MODEL,
     }
 
 

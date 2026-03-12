@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable, Optional
+
 from config import CHUNK_OVERLAP, CHUNK_SIZE
 
 
@@ -16,12 +18,16 @@ def _tail_words(text: str, count: int) -> list[str]:
     return words[-count:]
 
 
-def chunk_pages(pages: list[dict], source_name: str) -> list[dict]:
+def chunk_pages(
+    pages: list[dict],
+    source_name: str,
+    on_progress: Optional[Callable[[int, int], None]] = None,
+) -> list[dict]:
     chunks: list[dict] = []
     chunk_index = 0
     total_pages = len(pages)
 
-    for page in pages:
+    for page_index, page in enumerate(pages, start=1):
         raw_page_num = page.get("page_num", 0) if isinstance(page, dict) else 0
         try:
             page_num = int(raw_page_num or 0)
@@ -93,6 +99,9 @@ def chunk_pages(pages: list[dict], source_name: str) -> list[dict]:
                 add_unit(paragraph)
 
         finalize(allow_overlap=False)
+
+        if on_progress:
+            on_progress(page_index, total_pages)
 
     print(
         f"[CHUNKER] {source_name} - {len(chunks)} chunks from {total_pages} pages"

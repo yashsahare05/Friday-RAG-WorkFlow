@@ -1,4 +1,5 @@
 import re
+from typing import Callable, Optional
 
 import fitz
 from PIL import Image, ImageEnhance, ImageFilter
@@ -34,9 +35,13 @@ def _clean_paragraphs(text: str) -> list[str]:
     return paragraphs
 
 
-def extract_with_tesseract(pdf_path: str) -> list[dict]:
+def extract_with_tesseract(
+    pdf_path: str,
+    on_progress: Optional[Callable[[int, int, str], None]] = None,
+) -> list[dict]:
     results: list[dict] = []
     doc = fitz.open(pdf_path)
+    total_pages = len(doc)
 
     for page_index in range(len(doc)):
         page_num = page_index + 1
@@ -77,13 +82,19 @@ def extract_with_tesseract(pdf_path: str) -> list[dict]:
                     "method": "tesseract",
                 }
             )
+        if on_progress:
+            on_progress(page_num, total_pages, "tesseract")
 
     return results
 
 
-def extract_with_pymupdf(pdf_path: str) -> list[dict]:
+def extract_with_pymupdf(
+    pdf_path: str,
+    on_progress: Optional[Callable[[int, int, str], None]] = None,
+) -> list[dict]:
     results: list[dict] = []
     doc = fitz.open(pdf_path)
+    total_pages = len(doc)
 
     for page_index in range(len(doc)):
         page_num = page_index + 1
@@ -101,11 +112,16 @@ def extract_with_pymupdf(pdf_path: str) -> list[dict]:
                 "method": "pymupdf",
             }
         )
+        if on_progress:
+            on_progress(page_num, total_pages, "pymupdf")
 
     return results
 
 
-def extract_text_from_pdf(pdf_path: str) -> list[dict]:
+def extract_text_from_pdf(
+    pdf_path: str,
+    on_progress: Optional[Callable[[int, int, str], None]] = None,
+) -> list[dict]:
     pymupdf_results = extract_with_pymupdf(pdf_path)
     pymupdf_chars = sum(len(item.get("text", "")) for item in pymupdf_results)
 
@@ -115,10 +131,18 @@ def extract_text_from_pdf(pdf_path: str) -> list[dict]:
     else:
         print("[OCR] Scanned PDF detected, using Tesseract")
         try:
-            final_results = extract_with_tesseract(pdf_path)
+            final_results = extract_with_tesseract(
+                pdf_path,
+                on_progress=on_progress,
+            )
         except Exception as exc:
             print(f"[OCR] Tesseract failed: {exc}, using PyMuPDF fallback")
             final_results = pymupdf_results
+
+    if on_progress and final_results is pymupdf_results:
+        total_pages = len(final_results)
+        for index in range(total_pages):
+            on_progress(index + 1, total_pages, "pymupdf")
 
     pages = len(final_results)
     chars = sum(len(item.get("text", "")) for item in final_results)

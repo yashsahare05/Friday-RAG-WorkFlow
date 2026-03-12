@@ -61,8 +61,12 @@ const postJson = async <T>(path: string, payload: unknown): Promise<T> => {
 
 export type HealthResponse = {
   status: string;
-  ollama: boolean;
-  model: string;
+  llm_provider: string;
+  llm_ready: boolean;
+  llm_model: string;
+  embed_provider: string;
+  embed_ready: boolean;
+  embed_model: string;
 };
 
 export type UploadResponse = {
@@ -71,6 +75,24 @@ export type UploadResponse = {
   pages: number;
   chunks: number;
   message: string;
+};
+
+export type UploadAccepted = {
+  status: string;
+  job_id: string;
+  filename: string;
+};
+
+export type UploadStatus = {
+  job_id: string;
+  status: "queued" | "processing" | "done" | "error";
+  phase: string;
+  progress: number;
+  filename?: string;
+  pages?: number;
+  chunks?: number;
+  message?: string;
+  error?: string;
 };
 
 export type ChatHistoryItem = {
@@ -102,7 +124,7 @@ export type ResetResponse = {
 
 export const health = () => fetchJson<HealthResponse>("/health");
 
-export const uploadPdf = async (file: File): Promise<UploadResponse> => {
+export const uploadPdf = async (file: File): Promise<UploadAccepted> => {
   const form = new FormData();
   form.append("file", file);
 
@@ -115,8 +137,11 @@ export const uploadPdf = async (file: File): Promise<UploadResponse> => {
     throw new Error(await parseErrorMessage(response));
   }
 
-  return (await response.json()) as UploadResponse;
+  return (await response.json()) as UploadAccepted;
 };
+
+export const getUploadStatus = (jobId: string) =>
+  fetchJson<UploadStatus>(`/upload/status/${jobId}`);
 
 export const chat = (question: string, history: ChatHistoryItem[]) => {
   return postJson<ChatResponse>("/chat", { question, history });

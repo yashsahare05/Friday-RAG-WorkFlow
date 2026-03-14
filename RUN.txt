@@ -1,0 +1,13 @@
+1. backend: 
+terminal>> sequence
+>>cd c:\Users\admin\Documents\Hackathon
+>>.\.venv\Scripts\Activate.ps1
+>>cd backend
+>>python main.py
+
+2. frontend:
+terminal>> sequence
+>>cd c:\Users\admin\Documents\Hackathon
+>>cd frontend
+>>npm run dev
+

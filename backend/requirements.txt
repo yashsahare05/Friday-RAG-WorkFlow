@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+reportlab
+chromadb
+requests
+python-dotenv
+pytesseract
+pymupdf
+pillow

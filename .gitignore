@@ -1,0 +1,168 @@
+# ============================================================
+# SECRETS & CREDENTIALS  ← NEVER COMMIT THESE
+# ============================================================
+keys.txt
+*.key
+*.pem
+*.p12
+*.pfx
+vision_key.json
+*_key.json
+*-credentials.json
+service_account*.json
+
+# Environment variable files
+.env
+.env.*
+!.env.example        # allow the template
+
+# ============================================================
+# PYTHON
+# ============================================================
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+backend/.venv/
+backend/venv/
+
+# Byte-compiled / optimised / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy / pyright
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+pyrightconfig.json
+
+# ============================================================
+# NODE / FRONTEND
+# ============================================================
+frontend/node_modules/
+node_modules/
+frontend/.vite/
+frontend/dist/
+frontend/build/
+
+# npm / yarn lock can be committed but build cache should not
+.npm
+.yarn/cache
+.yarn/unplugged
+.pnp.*
+
+# ============================================================
+# DATA DIRECTORY  (runtime-generated; too large for git)
+# ============================================================
+data/chroma_db/
+data/uploads/
+data/logs/
+data/reports/
+
+# Keep the folder stubs so directory structure exists
+!data/chroma_db/.gitkeep
+!data/uploads/.gitkeep
+!data/logs/.gitkeep
+!data/reports/.gitkeep
+
+# ============================================================
+# LARGE / BINARY FILES
+# ============================================================
+*.pdf
+*.sqlite3
+*.db
+*.dll
+*.so
+*.dylib
+*.exe
+*.bin
+*.dat
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.parquet
+*.npy
+*.npz
+
+# ============================================================
+# OS & EDITOR JUNK
+# ============================================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains
+.idea/
+*.iml
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+\#*\#
+
+# ============================================================
+# MISC
+# ============================================================
+*.log
+*.tmp
+*.temp
+activate.bat

@@ -1,7 +1,8 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 from typing import Any, Callable, Optional
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import chromadb
@@ -32,14 +33,18 @@ def _maybe_prefix(text: str, purpose: str) -> str:
     return f"{prefix} {text}"
 
 
-def get_embedding(text: str, *, purpose: str) -> list[float]:
+def get_embeddings(texts: list[str], *, purpose: str) -> list[list[float]]:
     if not JINA_API_KEY:
         raise RuntimeError("JINA_API_KEY is not set")
 
+    if not texts:
+        return []
+
     try:
+        prefixed_texts = [_maybe_prefix(t, purpose) for t in texts]
         payload: dict[str, object] = {
             "model": JINA_MODEL,
-            "input": [_maybe_prefix(text, purpose)],
+            "input": prefixed_texts,
         }
         if JINA_TASK:
             payload["task"] = JINA_TASK
@@ -52,7 +57,7 @@ def get_embedding(text: str, *, purpose: str) -> list[float]:
                 "Accept": "application/json",
             },
             json=payload,
-            timeout=30,
+            timeout=60,
         )
 
         if not response.ok:
@@ -67,15 +72,26 @@ def get_embedding(text: str, *, purpose: str) -> list[float]:
         data = payload.get("data") or []
         if not data:
             raise ValueError(f"No embeddings returned: {payload}")
-        embedding = data[0].get("embedding")
+        
+        # Sort by index to ensure they match input order
+        data.sort(key=lambda x: x.get("index", 0))
+        embeddings = [item.get("embedding") for item in data]
 
-        if not isinstance(embedding, list):
-            raise ValueError("Invalid embedding payload")
-        return embedding
+        if any(not isinstance(e, list) for e in embeddings):
+            raise ValueError("Invalid embedding payload structure")
+            
+        return embeddings
     except Exception as exc:
         raise RuntimeError(
             f"Jina embedding failed: {exc}"
         ) from exc
+
+
+def get_embedding(text: str, *, purpose: str) -> list[float]:
+    results = get_embeddings([text], purpose=purpose)
+    if not results:
+        raise ValueError("Failed to get single embedding")
+    return results[0]
 
 
 def init_db():
@@ -98,26 +114,48 @@ def store_chunks(
 
     total = len(chunks)
     source = chunks[0].get("source", "unknown") if chunks else "unknown"
+    batch_size = 100  # Increased batch size for better efficiency
+    
+    # Create batches
+    batches = [chunks[i : i + batch_size] for i in range(0, total, batch_size)]
+    total_batches = len(batches)
+    processed_chunks = 0
+    import threading
+    progress_lock = threading.Lock()
 
-    for index, chunk in enumerate(chunks, start=1):
-        embedding = get_embedding(chunk["text"], purpose="document")
+    def process_batch(batch):
+        nonlocal processed_chunks
+        texts = [c["text"] for c in batch]
+        embeddings = get_embeddings(texts, purpose="document")
+        
+        ids = [c["chunk_id"] for c in batch]
+        metadatas = [
+            {
+                "page_num": c["page_num"],
+                "source": c["source"],
+                "chunk_id": c["chunk_id"],
+            }
+            for c in batch
+        ]
+        
         collection.upsert(
-            ids=[chunk["chunk_id"]],
-            embeddings=[embedding],
-            documents=[chunk["text"]],
-            metadatas=[
-                {
-                    "page_num": chunk["page_num"],
-                    "source": chunk["source"],
-                    "chunk_id": chunk["chunk_id"],
-                }
-            ],
+            ids=ids,
+            embeddings=embeddings,
+            documents=texts,
+            metadatas=metadatas,
         )
 
-        if index % 10 == 0:
-            print(f"[VECTORSTORE] Stored {index}/{total} chunks...")
-        if on_progress:
-            on_progress(index, total)
+        with progress_lock:
+            processed_chunks += len(batch)
+            print(f"[VECTORSTORE] Stored {processed_chunks}/{total} chunks...")
+            if on_progress:
+                on_progress(processed_chunks, total)
+
+    # Use ThreadPoolExecutor to send multiple embedding requests in parallel
+    max_workers = min(5, total_batches) if total_batches > 0 else 1
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Using list() to force evaluation and wait for all tasks
+        list(executor.map(process_batch, batches))
 
     print(f"[VECTORSTORE] Done — {total} chunks stored from {source}")
 

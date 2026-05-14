@@ -147,6 +147,60 @@ export const chat = (question: string, history: ChatHistoryItem[]) => {
   return postJson<ChatResponse>("/chat", { question, history });
 };
 
+export const chatStream = async (
+  question: string,
+  history: ChatHistoryItem[],
+  onChunk: (chunk: string) => void,
+  onDone: (response: ChatResponse) => void
+) => {
+  const response = await fetch(`${API_URL}/chat/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ question, history }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response));
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("Response body is not readable");
+  }
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const data = JSON.parse(line);
+        if (data.done) {
+          onDone({
+            answer: data.answer,
+            sources: data.sources,
+            confidence: data.confidence,
+          });
+        } else if (data.chunk) {
+          onChunk(data.chunk);
+        }
+      } catch (e) {
+        console.error("Failed to parse stream line:", line, e);
+      }
+    }
+  }
+};
+
 export const getFiles = () => fetchJson<SourceInfo[]>("/files");
 
 export const reset = () => fetchJson<ResetResponse>("/reset", { method: "DELETE" });

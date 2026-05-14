@@ -1,13 +1,11 @@
-1. backend: 
-terminal>> sequence
->>cd c:\Users\admin\Documents\Hackathon
->>.\.venv\Scripts\Activate.ps1
->>cd backend
->>python main.py
+>>>backend: 
+cd backend
+# Activate your virtual environment
+.venv\Scripts\activate
+# Start the server with hot-reload enabled
+uvicorn main:app --reload --port 8000
 
-2. frontend:
-terminal>> sequence
->>cd c:\Users\admin\Documents\Hackathon
->>cd frontend
->>npm run dev
-
+>>>frontend:
+cd frontend
+# Start the Vite development server
+npm run dev

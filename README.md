@@ -1,109 +1,90 @@
-# Friday � Local RAG Cockpit
+# FRIDAY 🚀 
+### Master your knowledge. A private, high-performance RAG environment.
 
-Friday is a local-first RAG dashboard for indexing PDF notes, grounding answers in your own documents, and exporting a session report. It includes:
-- PDF ingestion with OCR fallback (PyMuPDF for digital PDFs, Tesseract for scanned pages).
-- Chunking and vector search with ChromaDB.
-- Groq chat completions for question answering.
-- Jina embeddings for vector search.
-- A Vite + React + Tailwind UI with upload progress, sources panel, and report export.
+**FRIDAY** is a professional-grade Retrieval-Augmented Generation (RAG) cockpit designed for researchers, students, and power users. It allows you to index complex PDF documents, conduct grounded AI research, and generate automated study reports in a private, high-performance environment.
 
-## Project Structure
-- `backend/` FastAPI service for OCR, chunking, embeddings, and chat.
-- `frontend/` Vite + React UI.
-- `data/` Persistent data directories (ChromaDB, uploads, reports, logs).
+---
 
-## Prerequisites
-- Python 3.10+ recommended.
-- Node.js 18+ recommended.
-- Tesseract OCR installed (only needed for scanned PDFs).
+## ✨ Key Features
 
-## Environment Setup
+- **🚀 Ultra-Fast AI Streaming**: Backend refactored for asynchronous streaming, delivering tokens to the frontend as they are generated.
+- **👁️ Hybrid OCR Pipeline**: Intelligent digital PDF extraction via PyMuPDF with seamless fallback to **Google Cloud Vision OCR** for high-fidelity scanned document processing.
+- **🧠 Grounded Research**: Context-aware answering powered by **Groq (Llama 3)** and **Jina Embeddings**, with local vector storage in **ChromaDB**.
+- **🎨 Premium UI/UX**:
+  - **Synchronized Dark Mode**: A unified theme engine that toggles the entire dashboard instantly.
+  - **Custom Scrollbars**: Minimalist, theme-aware scroll interactions.
+  - **Typing Indicator**: Real-time "AI thinking" visual feedback.
+  - **Responsiveness**: Optimized for both high-end monitors and mobile devices.
+- **📄 Study Reporting**: Generate and download professional PDF summaries of your research sessions.
 
-### Backend `.env`
-Create or edit `backend/.env` with your keys and settings:
+---
 
-```env
-CHROMA_PATH=../data/chroma_db
-UPLOAD_DIR=../data/uploads
-REPORTS_DIR=../data/reports
-LOGS_DIR=../data/logs
-FASTAPI_URL=http://localhost:8000
+## 🛠️ Tech Stack
 
-# Groq LLM
-GROQ_API_KEY=your_groq_key_here
-GROQ_MODEL=openai/gpt-oss-120b
-GROQ_BASE_URL=https://api.groq.com/openai/v1
+- **Frontend**: React 18, Vite, Tailwind CSS, Questrial Typography.
+- **Backend**: FastAPI (Python 3.10), ChromaDB (Vector Search), Google Cloud Vision (OCR).
+- **LLM**: Groq (Llama 3 / Mixtral).
+- **Embeddings**: Jina AI (v2 Base English).
 
-# Jina embeddings
-JINA_API_KEY=your_jina_key_here
-JINA_MODEL=jina-embeddings-v2-base-en
-JINA_API_URL=https://api.jina.ai/v1/embeddings
-JINA_TASK=
-JINA_USE_PREFIXES=true
+---
 
-CHUNK_SIZE=300
-CHUNK_OVERLAP=50
-TOP_K=5
-SIMILARITY_THRESHOLD=0.35
-REINDEX_INTERVAL_MINUTES=30
-USE_CLOUD_OCR=false
-TESSERACT_PATH=C:\\Program Files\\Tesseract-OCR\\tesseract.exe
-```
+## 🚀 Quick Start
 
-### Frontend `.env`
-Edit `frontend/.env`:
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+
+- [Google Cloud Service Account Key](https://console.cloud.google.com/) (for OCR)
+- [Groq API Key](https://console.groq.com/)
 
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-## Install and Run
-
-### Backend
-If you are on Windows and the repo already contains a venv, you can use the helper:
-
-```powershell
-backend\activate.bat
-python backend\main.py
-```
-
-Or manually:
-
+### 2. Backend Setup
 ```powershell
 cd backend
-.\venv\Scripts\activate
-python main.py
+# Create and activate virtual environment
+python -m venv .venv
+.venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure .env (Copy from .env.example)
+# Ensure GOOGLE_APPLICATION_CREDENTIALS points to your JSON key
+uvicorn main:app --reload --port 8000
 ```
 
-The API will start on port 8000.
-
-### Frontend
-
+### 3. Frontend Setup
 ```powershell
 cd frontend
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
-The UI runs on port 5173.
+---
 
-## API Overview
-- `POST /upload` Upload a PDF for indexing (async job).
-- `GET /upload/status/{job_id}` Indexing progress updates.
-- `POST /chat` Ask a question grounded in your notes.
-- `GET /files` List indexed sources.
-- `DELETE /reset` Clear the database and session log.
-- `GET /report` Download a session report PDF.
-- `GET /health` Service health and model status.
+## 🏗️ Project Structure
 
-## Notes and Tips
-- If you change embedding models, ChromaDB may require a reset if the embedding dimension changes. Use the UI �Reset Database� button or call `DELETE /reset`.
-- For scanned PDFs, ensure Tesseract is installed and `TESSERACT_PATH` is valid.
-- If you see `Failed to fetch` in the UI, make sure the backend is running and `VITE_API_URL` is correct.
+- `/backend`: FastAPI service, OCR pipeline, and RAG logic.
+- `/frontend`: React source code, custom theme engine, and components.
+- `/data`: Local storage for ChromaDB, logs, and generated reports.
 
-## Tech Stack
-- Backend: FastAPI, ChromaDB, PyMuPDF, Tesseract OCR, ReportLab, Requests.
-- Frontend: React, Vite, Tailwind CSS.
+---
 
-## License
-Internal / hackathon use.
+## 📖 Usage Guide
+
+1.  **Index a PDF**: Upload your notes or research papers. FRIDAY will automatically detect if OCR is needed and begin parallel indexing.
+2.  **Monitor Progress**: Watch the real-time indexing status and chunk count.
+3.  **Chat & Research**: Ask questions grounded in your specific documents. Check the **Sources & Confidence** panel to verify accuracy.
+4.  **Export**: Download a PDF report summarizing your session findings.
+
+---
+
+## 👤 Author
+
+Developed with ❤️ by **[Yash Sahare](https://github.com/yashsahare05)**.
+
+---
+
+## 📜 License
+Private / Educational Use.

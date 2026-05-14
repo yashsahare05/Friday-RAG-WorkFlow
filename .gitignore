@@ -7,9 +7,19 @@ keys.txt
 *.p12
 *.pfx
 vision_key.json
-*_key.json
-*-credentials.json
-service_account*.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.node.json
+!*.config.js
+!*.config.ts
+!*.config.cjs
+!deployment_guide.md
+
+# Google Cloud Keys
+*-*.json
+vision_key.json
 
 # Environment variable files
 .env
@@ -166,3 +176,7 @@ $RECYCLE.BIN/
 *.tmp
 *.temp
 activate.bat
+.gemini/
+backend/data/
+plans/
+*.report.pdf

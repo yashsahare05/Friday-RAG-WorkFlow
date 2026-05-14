@@ -10,7 +10,7 @@ from typing import Any, Optional
 import uvicorn
 from fastapi import FastAPI, UploadFile, File, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -222,6 +222,27 @@ async def chat(payload: dict = Body(...)):
             raise HTTPException(status_code=400, detail="Question cannot be empty")
 
         return qa.answer_question(question, history)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/chat/stream")
+async def chat_stream(payload: dict = Body(...)):
+    try:
+        question = (payload.get("question") or "").strip()
+        history = payload.get("history") or []
+        if not isinstance(history, list):
+            history = []
+
+        if not question:
+            raise HTTPException(status_code=400, detail="Question cannot be empty")
+
+        return StreamingResponse(
+            qa.stream_answer_question(question, history),
+            media_type="text/event-stream",
+        )
     except HTTPException:
         raise
     except Exception as exc:

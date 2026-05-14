@@ -5,6 +5,7 @@ reportlab
 chromadb
 requests
 python-dotenv
-pytesseract
+google-cloud-vision
 pymupdf
 pillow
+httpx

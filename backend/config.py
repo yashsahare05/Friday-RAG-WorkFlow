@@ -29,8 +29,7 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
 TOP_K = int(os.getenv("TOP_K", "5"))
 SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.35"))
 REINDEX_INTERVAL_MINUTES = int(os.getenv("REINDEX_INTERVAL_MINUTES", "30"))
-USE_CLOUD_OCR = os.getenv("USE_CLOUD_OCR", "false").strip().lower() == "true"
-TESSERACT_PATH = os.getenv("TESSERACT_PATH", "tesseract")
+USE_CLOUD_OCR = os.getenv("USE_CLOUD_OCR", "true").strip().lower() == "true"
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(REPORTS_DIR, exist_ok=True)

@@ -1,25 +1,25 @@
-# FRIDAY 🚀 
+# FRIDAY
 ### Master your knowledge. A private, high-performance RAG environment.
 
-**FRIDAY** is a professional-grade Retrieval-Augmented Generation (RAG) cockpit designed for researchers, students, and power users. It allows you to index complex PDF documents, conduct grounded AI research, and generate automated study reports in a private, high-performance environment.
+FRIDAY is a professional-grade Retrieval-Augmented Generation (RAG) cockpit designed for researchers, students, and power users. It allows you to index complex PDF documents, conduct grounded AI research, and generate automated study reports in a private, high-performance environment.
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-- **🚀 Ultra-Fast AI Streaming**: Backend refactored for asynchronous streaming, delivering tokens to the frontend as they are generated.
-- **👁️ Hybrid OCR Pipeline**: Intelligent digital PDF extraction via PyMuPDF with seamless fallback to **Google Cloud Vision OCR** for high-fidelity scanned document processing.
-- **🧠 Grounded Research**: Context-aware answering powered by **Groq (Llama 3)** and **Jina Embeddings**, with local vector storage in **ChromaDB**.
-- **🎨 Premium UI/UX**:
-  - **Synchronized Dark Mode**: A unified theme engine that toggles the entire dashboard instantly.
+- **Ultra-Fast AI Streaming**: Backend refactored for asynchronous streaming, delivering tokens to the frontend as they are generated.
+- **Hybrid OCR Pipeline**: Intelligent digital PDF extraction via PyMuPDF with seamless fallback to Google Cloud Vision OCR for high-fidelity scanned document processing.
+- **Grounded Research**: Context-aware answering powered by Groq (Llama 3) and Jina Embeddings, with local vector storage in ChromaDB.
+- **Premium UI/UX**:
+  - **Synchronized Theme Engine**: A unified theme engine that toggles the entire dashboard instantly.
   - **Custom Scrollbars**: Minimalist, theme-aware scroll interactions.
   - **Typing Indicator**: Real-time "AI thinking" visual feedback.
   - **Responsiveness**: Optimized for both high-end monitors and mobile devices.
-- **📄 Study Reporting**: Generate and download professional PDF summaries of your research sessions.
+- **Study Reporting**: Generate and download professional PDF summaries of your research sessions.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: React 18, Vite, Tailwind CSS, Questrial Typography.
 - **Backend**: FastAPI (Python 3.10), ChromaDB (Vector Search), Google Cloud Vision (OCR).
@@ -28,13 +28,13 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 - Python 3.10+
 - Node.js 18+
-- [Google Cloud Service Account Key](https://console.cloud.google.com/) (for OCR)
-- [Groq API Key](https://console.groq.com/)
+- Google Cloud Service Account Key (for OCR)
+- Groq API Key
 
 ### 2. Backend Setup
 ```powershell
@@ -63,28 +63,28 @@ npm run dev
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
-- `/backend`: FastAPI service, OCR pipeline, and RAG logic.
-- `/frontend`: React source code, custom theme engine, and components.
-- `/data`: Local storage for ChromaDB, logs, and generated reports.
+- /backend: FastAPI service, OCR pipeline, and RAG logic.
+- /frontend: React source code, custom theme engine, and components.
+- /data: Local storage for ChromaDB, logs, and generated reports.
 
 ---
 
-## 📖 Usage Guide
+## Usage Guide
 
 1.  **Index a PDF**: Upload your notes or research papers. FRIDAY will automatically detect if OCR is needed and begin parallel indexing.
 2.  **Monitor Progress**: Watch the real-time indexing status and chunk count.
-3.  **Chat & Research**: Ask questions grounded in your specific documents. Check the **Sources & Confidence** panel to verify accuracy.
+3.  **Chat & Research**: Ask questions grounded in your specific documents. Check the Sources & Confidence panel to verify accuracy.
 4.  **Export**: Download a PDF report summarizing your session findings.
 
 ---
 
-## 👤 Author
+## Author
 
-Developed with ❤️ by **[Yash Sahare](https://github.com/yashsahare05)**.
+Developed by Yash Sahare (@yashsahare05).
 
 ---
 
-## 📜 License
-Private / Educational Use.
+## License
+Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
